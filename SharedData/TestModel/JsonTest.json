@@ -1,0 +1,67 @@
+﻿
+{
+  "label": "Тестировочный тест",
+  "description": "Тестовый тест",
+  "rootQuestion": {
+    "answers": [
+      {
+        "tagToManage": null,
+        "rate": 5,
+        "text": "*** **ый",
+        "nextQuestion": {
+          "answers": [
+            {
+              "tagToManage": null,
+              "rate": 5,
+              "text": "*** **ый",
+              "nextQuestion": {
+                "answers": [
+                  {
+                    "tagToManage": null,
+                    "rate": 5,
+                    "text": "*** **ый",
+                    "nextQuestion": {
+                      "answers": [],
+                      "text": "И правда что"
+                    }
+                  },
+                  {
+                    "tagToManage": null,
+                    "rate": 3,
+                    "text": "дурашка",
+                    "nextQuestion": {
+                      "answers": [],
+                      "text": "Не угадал"
+                    }
+                  }
+                ],
+                "text": "И правда что"
+              }
+            },
+            {
+              "tagToManage": null,
+              "rate": 3,
+              "text": "дурашка",
+              "nextQuestion": {
+                "answers": [],
+                "text": "Не угадал"
+              }
+            }
+          ],
+          "text": "И правда что"
+        }
+      },
+      {
+        "tagToManage": null,
+        "rate": 3,
+        "text": "дурашка",
+        "nextQuestion": {
+          "answers": [],
+          "text": "Не угадал"
+        }
+      }
+    ],
+    "text": "Не лезь дебил ... ?"
+  }
+}
+    

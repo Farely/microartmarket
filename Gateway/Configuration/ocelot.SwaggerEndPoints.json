@@ -1,0 +1,74 @@
+﻿{
+    "SwaggerEndPoints": [
+        {
+            "Key": "orders",
+            "Config": [
+                {
+                    "Name": "Orders API",
+                    "Version": "v1",
+                    "Service": {
+                        "Name": "orders",
+                        "Path": "/swagger/v1/swagger.json"
+                    }
+                }
+                
+            ]
+        },
+        {
+            "Key": "arts",
+            "Config": [
+                {
+                    "Name": "Arts API",
+                    "Version": "v1",
+                    "Service": {
+                        "Name": "arts",
+                        "Path": "/swagger/v1/swagger.json"
+                    }
+                }
+
+            ]
+        },
+        {
+            "Key": "users",
+            "Config": [
+                {
+                    "Name": "Users API",
+                    "Version": "v1",
+                    "Service": {
+                        "Name": "users",
+                        "Path": "/swagger/v1/swagger.json"
+                    }
+                }
+
+            ]
+        },
+        {
+            "Key": "tests",
+            "Config": [
+                {
+                    "Name": "Tests API",
+                    "Version": "v1",
+                    "Service": {
+                        "Name": "tests",
+                        "Path": "/swagger/v1/swagger.json"
+                    }
+                }
+
+            ]
+        },
+        {
+            "Key": "stats",
+            "Config": [
+                {
+                    "Name": "Stats API",
+                    "Version": "v1",
+                    "Service": {
+                        "Name": "stats",
+                        "Path": "/swagger/v1/swagger.json"
+                    }
+                }
+
+            ]
+        }
+    ]
+}

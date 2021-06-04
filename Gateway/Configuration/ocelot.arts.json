@@ -1,0 +1,11 @@
+﻿{
+    "Routes": [
+        {
+            "DownstreamPathTemplate": "/api/arts/{everything}", 
+            "DownstreamScheme": "https",
+            "ServiceName": "arts",
+            "UpstreamPathTemplate": "/arts/{everything}",
+            "SwaggerKey": "arts"
+        }
+    ]
+}

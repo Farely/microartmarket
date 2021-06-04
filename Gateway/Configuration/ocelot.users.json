@@ -1,0 +1,13 @@
+﻿{
+    
+    "Routes": [
+        {
+            "DownstreamPathTemplate": "/api/users/{everything}",
+            "DownstreamScheme": "https",
+            "ServiceName": "users",
+            "UpstreamPathTemplate": "/users/{everything}",
+            "UpstreamHttpMethod": [],
+            "SwaggerKey": "users"
+        }
+    ]
+}

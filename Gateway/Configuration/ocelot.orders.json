@@ -1,0 +1,13 @@
+﻿{
+    
+    "Routes": [
+        {
+            "DownstreamPathTemplate": "/api/orders/{everything}",
+            "DownstreamScheme": "https",
+            "ServiceName": "orders",
+            "UpstreamPathTemplate": "/orders/{everything}",
+            "UpstreamHttpMethod": [],
+            "SwaggerKey": "orders"
+        }
+    ]
+}

@@ -1,0 +1,11 @@
+﻿{
+    "Routes": [
+        {
+            "DownstreamPathTemplate": "/api/tests/{everything}", 
+            "DownstreamScheme": "https",
+            "ServiceName": "tests",
+            "UpstreamPathTemplate": "/tests/{everything}",
+            "SwaggerKey": "tests"
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+version: '3.4'
+
+services:
+  gateway:
+    image: ${DOCKER_REGISTRY-}gateway
+    build:
+      context: .
+      dockerfile: Gateway\Dockerfile   
+    ports:
+      - "5000:5000"
+      
+  artisttestapi:
+    image: ${DOCKER_REGISTRY-}artisttestapi
+    build:
+      context: .
+      dockerfile: ArtistTest.API\Dockerfile   
+    ports:
+      - "5001:5001"
+      
+  artsapi:
+    image: ${DOCKER_REGISTRY-}artsapi
+    build:
+      context: .
+      dockerfile: Arts.API\Dockerfile   
+    ports:
+      - "5002:5002"
+      
+  authapi:
+    image: ${DOCKER_REGISTRY-}authapi
+    build:
+      context: .
+      dockerfile: Auth.API\Dockerfile   
+    ports:
+      - "5003:5003"
+      
+  ordersapi:
+    image: ${DOCKER_REGISTRY-}ordersapi
+    build:
+      context: .
+      dockerfile: Orders.API\Dockerfile   
+    ports:
+      - "5004:5004"
+   
+  statsapi:
+    image: ${DOCKER_REGISTRY-}statsapi
+    build:
+      context: .
+      dockerfile: Stats.API\Dockerfile   
+    ports:
+      - "5005:5005"

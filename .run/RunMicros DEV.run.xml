@@ -1,0 +1,11 @@
+﻿<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="RunMicros DEV" type="CompoundRunConfigurationType">
+    <toRun name="Arts.API DEV" type="LaunchSettings" />
+    <toRun name="Stats.API DEV" type="LaunchSettings" />
+    <toRun name="ArtistTest.API DEV" type="LaunchSettings" />
+    <toRun name="Gateway" type="LaunchSettings" />
+    <toRun name="Orders.API DEV" type="LaunchSettings" />
+    <toRun name="Users.API DEV" type="LaunchSettings" />
+    <method v="2" />
+  </configuration>
+</component>
