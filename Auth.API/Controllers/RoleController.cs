@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SharedData;
 
 namespace Auth.Controllers
@@ -17,22 +19,36 @@ namespace Auth.Controllers
     {
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
-
-        public RolesController(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager)
+        private readonly ILogger<RolesController> _logger;
+        public RolesController(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager,ILogger<RolesController> logger)
         {
             _roleManager = roleManager;
             _userManager = userManager;
+            _logger = logger;
         }
 
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _roleManager.Roles.ToListAsync());
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                return Ok(await _roleManager.Roles.ToListAsync());
+            }
+        
+        catch (Exception e)
+        {
+            _logger.LogCritical(e.ToString());
+            throw;
+        }
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(string name)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             if (!string.IsNullOrEmpty(name))
             {
                 IdentityResult result = await _roleManager.CreateAsync(new IdentityRole(name));
@@ -43,34 +59,48 @@ namespace Auth.Controllers
 
             return BadRequest(name);
         }
+        
+        catch (Exception e)
+        {
+            _logger.LogCritical(e.ToString());
+            throw;
+        }
+        }
 
         [HttpDelete]
         public async Task<IActionResult> Delete(string id)
         {
-            IdentityRole role = await _roleManager.FindByIdAsync(id);
-            if (role != null)
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
             {
-                IdentityResult result = await _roleManager.DeleteAsync(role);
-            }
+                IdentityRole role = await _roleManager.FindByIdAsync(id);
+                if (role != null)
+                {
+                    IdentityResult result = await _roleManager.DeleteAsync(role);
+                }
 
-            return Ok();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
 
         [HttpPut]
         public async Task<IActionResult> Edit(string userId, List<string> roles)
         {
-            // получаем пользователя
-            ApplicationUser user = await _userManager.FindByIdAsync(userId);
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                ApplicationUser user = await _userManager.FindByIdAsync(userId);
             if (user != null)
             {
-                // получем список ролей пользователя
                 var userRoles = await _userManager.GetRolesAsync(user);
-                // получаем все роли
                 var allRoles = _roleManager.Roles.ToList();
-                // получаем список ролей, которые были добавлены
                 var addedRoles = roles.Except(userRoles);
-                // получаем роли, которые были удалены
                 var removedRoles = userRoles.Except(roles);
 
                 await _userManager.AddToRolesAsync(user, addedRoles);
@@ -81,6 +111,12 @@ namespace Auth.Controllers
             }
 
             return NotFound();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
     }
 }

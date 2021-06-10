@@ -53,9 +53,24 @@ namespace Arts.API.Controllers
         /// <response code="401">Нет авторизации</response>
         [HttpGet("{id}")]
         [AllowAnonymous]
-        public ActionResult<ArtWorkView> GetWork(int id)
-        {
-            return StatusCode(500, "Нет реализации");
+        public  async Task<ActionResult<ArtWorkView>> GetWork(int id)
+        { 
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                var work = await _dataContext.Works.SingleOrDefaultAsync(i => i.Id == id);
+                if (work == null)
+                {
+                    return NoContent();
+                }
+
+                return Ok(work);
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         /// <summary>
@@ -65,9 +80,26 @@ namespace Arts.API.Controllers
         /// <response code="400">Если картины нет</response>
         /// <response code="401">Нет авторизации</response>
         [HttpDelete("{id}")]
-        public ActionResult<ArtWorkView> DeleteWork(int id)
+        public async Task<ActionResult<ArtWorkView>> DeleteWork(int id)
         {
-            return StatusCode(500, "Нет реализации");
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                var work = await _dataContext.Works.SingleOrDefaultAsync(i => i.Id == id);
+            
+                if (work == null)
+                {
+                    return NoContent();
+                }
+                _dataContext.Works.Remove(work);
+                await _dataContext.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
 
@@ -81,9 +113,18 @@ namespace Arts.API.Controllers
         [ProducesResponseType(typeof(ArtWorkView), (int) HttpStatusCode.OK)]
         public async Task<ActionResult<List<ArtWorkView>>> Search([FromQuery] SearchGalley searchRequest)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var works = await _dataContext.Works.OrderBy(w => w.Id).Skip(searchRequest.startAt).Skip(searchRequest.skip)
                 .Take(searchRequest.count).Include(u => u.Author).ToListAsync();
             return _mapper.Map<List<ArtWork>, List<ArtWorkView>>(works);
+             }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         /// <summary>
@@ -97,6 +138,9 @@ namespace Arts.API.Controllers
         [ProducesResponseType((int) HttpStatusCode.Created)]
         public async Task<ActionResult> AddWork([FromForm] AddArtWork addRequest)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var originalFilename = Path.GetFileName(addRequest.Art.FileName);
             string fileId = Guid.NewGuid().ToString().Replace("-", "");
             var user = await GetCurrentUserAsync();
@@ -123,6 +167,12 @@ namespace Arts.API.Controllers
             await _dataContext.Works.AddAsync(artWork);
             await _dataContext.SaveChangesAsync();
             return Created(nameof(ArtWorkView), artWorkView);
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         /// <summary>
@@ -136,6 +186,9 @@ namespace Arts.API.Controllers
         [ProducesResponseType((int) HttpStatusCode.Created)]
         public async Task<ActionResult> FinishOrderedWork(int id, [FromForm] IFormFile artFile)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var ArtWork = await _dataContext.Works.Include(a => a.Author).SingleOrDefaultAsync(i => i.Id == id);
 
 
@@ -161,6 +214,12 @@ namespace Arts.API.Controllers
             await _dataContext.SaveChangesAsync();
             return Created(nameof(ArtWorkView), artWorkView);
         }
+        catch (Exception e)
+        {
+            _logger.LogCritical(e.ToString());
+            throw;
+        }
+        }
 
 
         /// <summary>
@@ -174,6 +233,9 @@ namespace Arts.API.Controllers
         [ProducesResponseType((int) HttpStatusCode.Created)]
         public async Task<ActionResult> AddWorkFromOrder([FromBody] AddArtWorkFromOrder addRequest)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var user = await GetCurrentUserAsync();
             var artWork = new ArtWork
             {
@@ -185,6 +247,12 @@ namespace Arts.API.Controllers
             await _dataContext.Works.AddAsync(artWork);
             await _dataContext.SaveChangesAsync();
             return Created(nameof(ArtWorkView), artWorkView);
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
 
@@ -199,7 +267,19 @@ namespace Arts.API.Controllers
         [ProducesResponseType((int) HttpStatusCode.Created)]
         public async Task<ActionResult> PutWork([FromForm] AddArtWork addRequest)
         {
-            return StatusCode(500, "Нет реализации");
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                var work = _mapper.Map<AddArtWork, ArtWork>(addRequest);
+                _dataContext.Works.Update(work);
+                await _dataContext.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         private async Task<ApplicationUser> GetCurrentUserAsync()

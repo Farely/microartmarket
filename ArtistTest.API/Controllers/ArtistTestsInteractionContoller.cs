@@ -44,17 +44,27 @@ namespace ArtistTest.API.Controllers
         /// <param name="testId">Id теста</param>
         /// <param name="testResultId">Id результата теста</param>
         /// <returns>Возвращает последнюю картину</returns>
-        /// <response code="201">Возвращает картину</response>
-        /// <response code="400">Если картины нет</response>
-        [HttpGet("{testid}/{testResultId}/result")]
+        /// <response code="200">Возвращает результаты теста</response>
+        /// <response code="404">Если теста нет</response>
+        /// <response code="204">Если тест есть, а результата нет</response>
+        [HttpGet("{testId}/{testResultId}/result")]
         [ProducesResponseType(typeof(TestResult), (int) HttpStatusCode.OK)]
         public async Task<ActionResult<TestResult>> GetResult(int testId, int testResultId)
         {
-            var test = await _dataContext.Tests.SingleOrDefaultAsync(t => t.Id == testId);
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                var test = await _dataContext.Tests.SingleOrDefaultAsync(t => t.Id == testId);
             if (test == null) return NotFound(new {Message = $"Теста с id {testId} нет."});
             var testResult = await _dataContext.TestResult.SingleOrDefaultAsync(t => t.TestResultId == testResultId);
             if (testResult != null) return testResult;
-            return NotFound();
+            return NoContent();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                return StatusCode(500);
+            }
         }
 
 
@@ -72,6 +82,9 @@ namespace ArtistTest.API.Controllers
         public async Task<ActionResult> CreateAnswerResult(int testId, int testResultId,
             [FromBody] AnswerResult newAnswer)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var test = await _dataContext.Tests.SingleOrDefaultAsync(t => t.Id == testId);
             if (test == null) return NotFound(new {Message = $"Теста с id {testId} нет."});
             var testResult = await _dataContext.TestResult.SingleOrDefaultAsync(t => t.TestResultId == testResultId);
@@ -81,6 +94,12 @@ namespace ArtistTest.API.Controllers
             _dataContext.AnswerResult.Add(newAnswer);
             await _dataContext.SaveChangesAsync();
             return Accepted();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                return StatusCode(500);
+            }
         }
 
         /// <summary>
@@ -92,6 +111,9 @@ namespace ArtistTest.API.Controllers
         [ProducesResponseType((int) HttpStatusCode.NotFound)]
         public async Task<ActionResult> StartTest(int id)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var test = await _dataContext.Tests.Include(t => t.Questions)
                 .ThenInclude<Test, Question, ICollection<Answer>>(q => q.Answers).SingleOrDefaultAsync(t => t.Id == id);
             if (test == null) return NotFound(new {Message = $"Теста с id {test.Id} нет."});
@@ -111,6 +133,12 @@ namespace ArtistTest.API.Controllers
             var startedTestView = _mapper.Map<Test, TestView>(test);
             var resultTestView = _mapper.Map<TestResult, TestResultView>(startedTest);
             return Created(nameof(Test), new {resultTestView, startedTestView});
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                return StatusCode(500);
+            }
         }
 
         /// <summary>
@@ -123,6 +151,9 @@ namespace ArtistTest.API.Controllers
         [ProducesResponseType((int) HttpStatusCode.NotFound)]
         public async Task<ActionResult> EndTest(int testId, int testResultId)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var test = await _dataContext.Tests.SingleOrDefaultAsync(t => t.Id == testId);
             if (test == null) return NotFound(new {Message = $"Теста с id {testId} нет."});
             var testResult = await _dataContext.TestResult.Include(r => r.AnswerResults)
@@ -140,6 +171,12 @@ namespace ArtistTest.API.Controllers
 
             return Created(nameof(TestResultViewAnswers), testResultView);
         }
+        catch (Exception e)
+        {
+            _logger.LogCritical(e.ToString());
+            return StatusCode(500);
+        }
+        }
 
 
         /// <summary>
@@ -148,36 +185,56 @@ namespace ArtistTest.API.Controllers
         /// <param name="results">Результат</param>
         private async Task<ApplicationUser> GetBestArtist(List<AnswerResult> results)
         {
-            var artists = new List<ApplicationUser>();
-            var data = await _userManager.GetUsersInRoleAsync("Artist");
-            foreach (var item in data)
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
             {
-                var newUser = _userManager.Users.Include(a => a.Tags).FirstOrDefault(u => u.Id == item.Id);
-                artists.Add(newUser);
+                var artists = new List<ApplicationUser>();
+                var data = await _userManager.GetUsersInRoleAsync("Artist");
+                foreach (var item in data)
+                {
+                    var newUser = _userManager.Users.Include(a => a.Tags).FirstOrDefault(u => u.Id == item.Id);
+                    artists.Add(newUser);
+                }
+
+                var finalScore = results
+                    .Select(result => new UserArtTag {Rate = result.Answer.Rate, ArtTag = result.Answer.ArtTag})
+                    .ToList();
+                var topScore = finalScore
+                    .OrderBy(a => a.Rate)
+                    .FirstOrDefault();
+                if (topScore == null)
+                {
+                    var rand = new Random();
+                    var toSkip = rand.Next(1, _dataContext.Users.Count());
+                    return await _userManager.Users.Skip(toSkip).Take(1).FirstAsync();
+                }
+
+                var topUsers = artists
+                    .Where(artist => artist.Tags.Contains(topScore));
+                var topUser = topUsers.OrderBy(user =>
+                    user.Tags.Where(tag => tag.ArtTag == topScore.ArtTag).Select(userRate => userRate.Rate)).First();
+                return topUser;
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
             }
 
-            var finalScore = results
-                .Select(result => new UserArtTag {Rate = result.Answer.Rate, ArtTag = result.Answer.ArtTag}).ToList();
-            var topScore = finalScore
-                .OrderBy(a => a.Rate)
-                .FirstOrDefault();
-            if (topScore == null)
-            {
-                var rand = new Random();
-                var toSkip = rand.Next(1, _dataContext.Users.Count());
-                return await _userManager.Users.Skip(toSkip).Take(1).FirstAsync();
-            }
-
-            var topUsers = artists
-                .Where(artist => artist.Tags.Contains(topScore));
-            var topUser = topUsers.OrderBy(user =>
-                user.Tags.Where(tag => tag.ArtTag == topScore.ArtTag).Select(userRate => userRate.Rate)).First();
-            return topUser;
         }
 
         private async Task<ApplicationUser> GetCurrentUserAsync()
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             return await _userManager.GetUserAsync(User);
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
     }
 }

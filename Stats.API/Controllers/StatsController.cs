@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,11 +34,22 @@ namespace Stats.API.Controllers
         [AllowAnonymous]
         public ActionResult<ArtWork> GetOrders()
         {
-            var workscount = _dataContext.Orders.Count();
-            return Json(new
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
             {
-                count = workscount
-            });
+                var workscount = _dataContext.Orders.Count();
+                return Json(new
+                {
+                    count = workscount
+                });
+            }
+        
+        catch (Exception e)
+        {
+            _logger.LogCritical(e.ToString());
+            throw;
+        }
+            
         }
 
 
@@ -50,11 +62,22 @@ namespace Stats.API.Controllers
         [AllowAnonymous]
         public ActionResult<ArtWork> GetWorks()
         {
-            var workscount = _dataContext.Works.Count();
-            return Json(new
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
             {
-                count = workscount
-            });
+                var workscount = _dataContext.Works.Count();
+                return Json(new
+                {
+                    count = workscount
+                });
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
+
+
         }
 
 
@@ -67,11 +90,19 @@ namespace Stats.API.Controllers
         [AllowAnonymous]
         public ActionResult<ArtWork> GetTag()
         {
+            try
+            {
             var tagcount = _dataContext.ArtTags.Count();
             return Json(new
             {
                 count = tagcount
             });
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
     }
 }

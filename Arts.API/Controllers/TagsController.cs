@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Arts.API.Controllers.RequestModels;
@@ -29,24 +30,56 @@ namespace Arts.API.Controllers
 
 
         /// <summary>
-        ///     Получает тег по Id.
+        /// Получает тег по Id.
         /// </summary>
-        /// <response code="200">Возвращает картину</response>
+        /// <response code="200">Возвращает тег</response>
         /// <response code="400">Если тега нет</response>
         [HttpGet("{id}")]
         [AllowAnonymous]
-        public ActionResult<ArtWork> GetTag(int id)
+        public async Task<ActionResult<ArtTag>> GetTag(int id)
         {
-            return StatusCode(500, "Нет реализации");
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                var work = await _dataContext.ArtTags.SingleOrDefaultAsync(i => i.ArtTagId == id);
+                if (work == null)
+                {
+                    return NoContent();
+                }
+
+                return Ok(work);
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         /// <summary>
         ///     Удаляет тег по Id.
         /// </summary>
         [HttpDelete("{id}")]
-        public ActionResult<ArtWork> DeleteWork(int id)
+        public async Task<ActionResult> DeleteWork(int id)
         {
-            return StatusCode(500, "Нет реализации");
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                var work = await _dataContext.ArtTags.SingleOrDefaultAsync(i => i.ArtTagId == id);
+            
+                if (work == null)
+                {
+                    return NoContent();
+                }
+                _dataContext.ArtTags.Remove(work);
+                await _dataContext.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         /// <summary>
@@ -54,9 +87,20 @@ namespace Arts.API.Controllers
         /// </summary>
         [HttpPut]
         [AllowAnonymous]
-        public ActionResult UpdateWork(ArtTag work)
+        public async Task <ActionResult> UpdateWork(ArtTag tag)
         {
-            return StatusCode(500, "Нет реализации");
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                _dataContext.ArtTags.Update(tag);
+                await _dataContext.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
 

@@ -50,6 +50,9 @@ namespace Auth.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> LogIn([FromBody] LoginUser authModel)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var signInResult =
                 await _signInManager.PasswordSignInAsync(authModel.Login, authModel.Password, false, false);
             if (!signInResult.Succeeded) return Unauthorized("Неверный логин/пароль");
@@ -59,40 +62,63 @@ namespace Auth.Controllers
             claims.Add(new Claim(ClaimTypes.Name, user.UserName));
             claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id));
             return Ok(GenerateJwt(authModel, claims, roles));
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         [HttpGet("about")]
         public IActionResult GetInfo()
         {
-            return Json(new UserInfo
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
             {
-                Id = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                Claims = User.Claims.ToDictionary(claim => claim.Type, claim => claim.Value)
-            });
+                return Json(new UserInfo
+                {
+                    Id = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    Claims = User.Claims.ToDictionary(claim => claim.Type, claim => claim.Value)
+                });
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         private LoginResult GenerateJwt(LoginUser user, List<Claim> claims, IList<string>? roles)
         {
-            var jwtTokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_settings.Value.Secret);
-            var tokenDescriptor = new SecurityTokenDescriptor
+            try
             {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(6),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key),
-                    SecurityAlgorithms.HmacSha512Signature)
-            };
+                var jwtTokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(_settings.Value.Secret);
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(claims),
+                    Expires = DateTime.UtcNow.AddHours(6),
+                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key),
+                        SecurityAlgorithms.HmacSha512Signature)
+                };
 
-            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
+                var token = jwtTokenHandler.CreateToken(tokenDescriptor);
 
-            var jwtToken = jwtTokenHandler.WriteToken(token);
+                var jwtToken = jwtTokenHandler.WriteToken(token);
 
-            return new LoginResult
+                return new LoginResult
+                {
+                    Login = user.Login,
+                    AccessToken = jwtToken,
+                    Roles = roles
+                };
+            }
+            catch (Exception e)
             {
-                Login = user.Login,
-                AccessToken = jwtToken,
-                Roles = roles
-            };
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ namespace Arts.API.Controllers.RequestModels
 {
     public class AddArtWork
     {
+        public int Id;
         public IFormFile Art { get; set; }
 
         [Required] public List<ArtTagView> Tags { get; set; }

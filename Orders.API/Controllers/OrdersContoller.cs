@@ -45,19 +45,6 @@ namespace Orders.API.Controllers
             _configuration = configuration;
         }
 
-        /// <summary>
-        ///     Получает заказ по Id.
-        /// </summary>
-        /// <param name="item"></param>
-        /// <returns>Возвращает последнюю картину</returns>
-        /// <response code="201">Возвращает картину</response>
-        /// <response code="400">Если картины нет</response>
-        [HttpPut]
-        public ActionResult<OrderNewView> Put()
-        {
-            return StatusCode(500, "Нет реализации");
-        }
-
 
         /// <summary>
         ///     Получает заказ по Id.
@@ -67,9 +54,24 @@ namespace Orders.API.Controllers
         /// <response code="201">Возвращает картину</response>
         /// <response code="400">Если картины нет</response>
         [HttpGet]
-        public ActionResult<OrderNewView> Get()
+        public async Task<ActionResult<OrderNewView>> Get(int id)
         {
-            return StatusCode(500, "Нет реализации");
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+                var order = await _dataContext.Orders.SingleOrDefaultAsync(i => i.OrderId == id);
+                if (order == null)
+                {
+                    return NoContent();
+                }
+
+                return Ok(order);
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
 
@@ -82,7 +84,11 @@ namespace Orders.API.Controllers
         [Authorize(Roles = "Artist,Customer")]
         [ProducesResponseType((int) HttpStatusCode.Created)]
         public async Task<ActionResult> CreateOrder([FromBody] OrderNewView orderArtWorkModel)
+        
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var newOrder = new Order();
             var user = await GetCurrentUserAsync();
             newOrder.Label = orderArtWorkModel.Label;
@@ -92,6 +98,12 @@ namespace Orders.API.Controllers
             await _dataContext.Orders.AddAsync(newOrder);
             await _dataContext.SaveChangesAsync();
             return Created(nameof(OrderNewView), _mapper.Map<Order, OrderNewView>(newOrder));
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         /// <summary>
@@ -105,6 +117,9 @@ namespace Orders.API.Controllers
         [ProducesResponseType((int) HttpStatusCode.Created)]
         public async Task<ActionResult> FinishOrder(int id, [FromForm] OrderEndedView artFile)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var order = await _dataContext.Orders.Include(a => a.Art).Include(
                 q => q.Customer).SingleOrDefaultAsync(i => i.OrderId == id);
             if (order == null) return NotFound(new {Message = $"Заказа с id {id} нет."});
@@ -116,11 +131,20 @@ namespace Orders.API.Controllers
             _dataContext.Orders.Update(order);
             await _dataContext.SaveChangesAsync();
             return Created(nameof(OrderNewView), _mapper.Map<Order, OrderNewView>(order));
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
 
         private async Task SendToGalleryEndedWork(int id, IFormFile file)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var accessToken = Request.Headers[HeaderNames.Authorization];
             var test = accessToken.ToString();
             var client = new HttpClient();
@@ -142,11 +166,20 @@ namespace Orders.API.Controllers
             var responce = await client.SendAsync(request);
             var result = await responce.Content.ReadAsStringAsync();
             client.Dispose();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
 
         private async Task SendToGalleryStartedWork(OrderNewView orderNewView)
         {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
             var accessToken = Request.Headers[HeaderNames.Authorization];
             var test = accessToken.ToString();
             var client = new HttpClient();
@@ -166,30 +199,12 @@ namespace Orders.API.Controllers
             var responce = await client.SendAsync(request);
             var result = await responce.Content.ReadAsStringAsync();
             client.Dispose();
-        }
-
-        /*[HttpPut("{id:int}")]
-        [ProducesResponseType((int)HttpStatusCode.NotFound)]
-        [ProducesResponseType((int)HttpStatusCode.Created)]
-        public async Task<ActionResult<OrderEndedView>> Put([FromBody] OrderEndedView testToUpdate)
-        {
-            
-            var artTags = await _dataContext.ArtTags.Select(ids => ids.ArtTagId).ToListAsync();
-            if (!(testToUpdate.Tags
-                .TrueForAll(tag => artTags.Contains(tag.Id))));
-            {
-                return  NotFound("Один из тегов ArtTags неправильно задан :(");
             }
-           
-        }*/
-
-
-        [HttpDelete("{id}")]
-        public ActionResult<Order> DeleteOrderByAsync(string id)
-        {
-            //ТУТ БУДЕТ УДАЛЕНИЕ
-            var rng = new Random();
-            return new Order {OrderId = 2};
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
 
         private async Task<ApplicationUser> GetCurrentUserAsync()
