@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using Arts.API.Controllers.MapModels;
 using AutoMapper;
+using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -36,7 +37,7 @@ namespace ArtWorkGallery.API
         {
             services.AddHttpContextAccessor();
             services.ConfigureCors(Configuration).ConfigureControllers(Configuration).ConfigureSwagger(Configuration)
-                .ConfigureContext(Configuration).ConfigureAuthService(Configuration).ConfigureMapper(Configuration);
+                .ConfigureContext(Configuration).AddCustomAuthentication(Configuration).ConfigureMapper(Configuration);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -201,6 +202,53 @@ namespace ArtWorkGallery.API
             public int Status { get; set; } = 500;
 
             public object Value { get; set; }
+        }
+        
+        public static IServiceCollection AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<DataContext>();
+            var builder = services.AddIdentityCore<ApplicationUser>();
+            var identityBuilder = new IdentityBuilder(builder.UserType, builder.Services);
+            identityBuilder.AddEntityFrameworkStores<DataContext>();
+            identityBuilder.AddSignInManager<SignInManager<ApplicationUser>>();
+            identityBuilder.AddUserManager<UserManager<ApplicationUser>>();
+            
+            var identityUrl = configuration.GetValue<string>("identityUrl");
+            var apiSecret = configuration.GetValue<string>("apiSecret");
+            var name = configuration.GetValue<string>("resName");
+            services.AddAuthentication(options =>
+                    {
+                        options.DefaultScheme = IdentityServerAuthenticationDefaults.AuthenticationScheme;
+                        
+                    }
+                   )
+                .AddIdentityServerAuthentication(options =>
+                {
+                    options.Authority = identityUrl;
+                    options.ApiName = name;
+                    options.ApiSecret = apiSecret;
+                    options.RequireHttpsMetadata = false;
+                    options.SaveToken = true;
+                    options.CacheDuration = TimeSpan.FromMinutes(30);
+
+            
+                });
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("OnlyFromOrders",
+                    policy =>
+                    {
+                        policy.RequireClaim("scope","api.orders");
+                    });
+                options.AddPolicy("OnlyFromStats",
+                    policy =>
+                    {
+                        policy.RequireClaim("scope","api.stats");
+                    });
+            });
+            services.AddControllers();
+            return services;
         }
     }
 }

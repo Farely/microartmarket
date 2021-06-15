@@ -1,8 +1,10 @@
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using AutoMapper;
+using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -35,7 +37,7 @@ namespace Stats.API
         {
             services.AddHttpContextAccessor();
             services.ConfigureCors(Configuration).ConfigureControllers(Configuration).ConfigureSwagger(Configuration)
-                .ConfigureContext(Configuration).ConfigureAuthService(Configuration).ConfigureMapper(Configuration);
+                .ConfigureContext(Configuration).ConfigureMapper(Configuration).AddCustomAuthentication(Configuration);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -43,11 +45,13 @@ namespace Stats.API
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Stats.API v1"));
+            
             }
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Stats.API v1"));
             app.UseHttpsRedirection();
             app.UseRouting();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
@@ -188,6 +192,41 @@ namespace Stats.API
             public int Status { get; set; } = 500;
 
             public object Value { get; set; }
+        }
+        
+        public static IServiceCollection AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<DataContext>();
+            var builder = services.AddIdentityCore<ApplicationUser>();
+            var identityBuilder = new IdentityBuilder(builder.UserType, builder.Services);
+            identityBuilder.AddEntityFrameworkStores<DataContext>();
+            identityBuilder.AddSignInManager<SignInManager<ApplicationUser>>();
+            identityBuilder.AddUserManager<UserManager<ApplicationUser>>();
+            
+            var identityUrl = configuration.GetValue<string>("identityUrl");
+            var apiSecret = configuration.GetValue<string>("apiSecret");
+            var name = configuration.GetValue<string>("resName");
+            services.AddAuthentication(options =>
+                    {
+                        options.DefaultScheme = IdentityServerAuthenticationDefaults.AuthenticationScheme;
+                        
+                    }
+                )
+                .AddIdentityServerAuthentication(options =>
+                {
+                    options.Authority = identityUrl;
+                    options.ApiName = name;
+                    options.ApiSecret = apiSecret;
+                    options.RequireHttpsMetadata = false;
+                    options.SaveToken = true;
+                    options.CacheDuration = TimeSpan.FromMinutes(30);
+
+            
+                });
+            services.AddAuthorization();
+            services.AddControllers();
+            return services;
         }
     }
 }

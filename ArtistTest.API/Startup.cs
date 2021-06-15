@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using ArtistTest.API.Controllers.MapModels;
 using AutoMapper;
+using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -40,7 +41,7 @@ namespace ArtistTest.API
         {
             services.AddHttpContextAccessor();
             services.ConfigureCors(Configuration).ConfigureControllers(Configuration).ConfigureSwagger(Configuration)
-                .ConfigureContext(Configuration).ConfigureAuthService(Configuration).ConfigureMapper(Configuration);
+                .ConfigureContext(Configuration).AddCustomAuthentication(Configuration).ConfigureMapper(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -229,6 +230,48 @@ namespace ArtistTest.API
             public int Status { get; set; } = 500;
 
             public object Value { get; set; }
+        }
+        
+        public static IServiceCollection AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<DataContext>();
+            var builder = services.AddIdentityCore<ApplicationUser>();
+            var identityBuilder = new IdentityBuilder(builder.UserType, builder.Services);
+            identityBuilder.AddEntityFrameworkStores<DataContext>();
+            identityBuilder.AddSignInManager<SignInManager<ApplicationUser>>();
+            identityBuilder.AddUserManager<UserManager<ApplicationUser>>();
+            
+            var identityUrl = configuration.GetValue<string>("identityUrl");
+            var apiSecret = configuration.GetValue<string>("apiSecret");
+            var name = configuration.GetValue<string>("resName");
+            services.AddAuthentication(options =>
+                    {
+                        options.DefaultScheme = IdentityServerAuthenticationDefaults.AuthenticationScheme;
+                        
+                    }
+                )
+                .AddIdentityServerAuthentication(options =>
+                {
+                    options.Authority = identityUrl;
+                    options.ApiName = name;
+                    options.ApiSecret = apiSecret;
+                    options.RequireHttpsMetadata = false;
+                    options.SaveToken = true;
+                    options.CacheDuration = TimeSpan.FromMinutes(30);
+
+            
+                });
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("OnlyFromStats",
+                    policy =>
+                    {
+                        policy.RequireClaim("scope","api.stats");
+                    });
+            });
+            services.AddControllers();
+            return services;
         }
     }
 }

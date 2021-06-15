@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Linq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +12,7 @@ namespace Stats.API.Controllers
 {
     [ApiController]
     [Route("api/stats/tags")]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize]
     public class TagsController : Controller
     {
         private readonly ILogger<TagsController> _logger;
@@ -31,7 +32,6 @@ namespace Stats.API.Controllers
         /// <response code="200">Возвращает картину</response>
         /// <response code="400">Если тега нет</response>
         [HttpGet("info/orders")]
-        [AllowAnonymous]
         public ActionResult<ArtWork> GetOrders()
         {
             _logger.LogInformation(Request.Host.Value + Request.Path);
@@ -44,23 +44,24 @@ namespace Stats.API.Controllers
                 });
             }
         
-        catch (Exception e)
-        {
+            catch (Exception e)
+            {
             _logger.LogCritical(e.ToString());
             throw;
-        }
+            }
             
         }
+        
+
 
 
         /// <summary>
-        ///     Получает статистику по работам.
+        /// Получает статистику по работам.
         /// </summary>
         /// <response code="200">Возвращает картину</response>
         /// <response code="400">Если тега нет</response>
         [HttpGet("info/works")]
-        [AllowAnonymous]
-        public ActionResult<ArtWork> GetWorks()
+        public ActionResult GetWorks()
         {
             _logger.LogInformation(Request.Host.Value + Request.Path);
             try
@@ -87,8 +88,7 @@ namespace Stats.API.Controllers
         /// <response code="200">Возвращает картину</response>
         /// <response code="400">Если тега нет</response>
         [HttpGet("info/tags")]
-        [AllowAnonymous]
-        public ActionResult<ArtWork> GetTag()
+        public ActionResult GetTag()
         {
             try
             {

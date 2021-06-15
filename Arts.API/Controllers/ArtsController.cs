@@ -229,7 +229,8 @@ namespace Arts.API.Controllers
         /// <response code="401">Нет авторизации</response>
         [HttpPost("new/fromorder")]
         [Consumes("application/json")]
-        [Authorize(Roles = "Artist")]
+        //[Authorize(Roles = "Artist")]
+        [Authorize(Policy = "OnlyFromOrders")]
         [ProducesResponseType((int) HttpStatusCode.Created)]
         public async Task<ActionResult> AddWorkFromOrder([FromBody] AddArtWorkFromOrder addRequest)
         {
@@ -285,6 +286,31 @@ namespace Arts.API.Controllers
         private async Task<ApplicationUser> GetCurrentUserAsync()
         {
             return await _userManager.GetUserAsync(User);
+        }
+        
+        
+        /// <summary>
+        ///     Получает галерею
+        /// </summary>
+        /// <response code="200">Возвращает галерею</response>
+        /// <response code="401">Нет авторизации</response>
+        [HttpGet("stats")]
+        [Authorize(Policy = "OnlyFromStats")]
+        
+        [ProducesResponseType(typeof(ArtWorkView), (int) HttpStatusCode.OK)]
+        public async Task<ActionResult<int>> GetStats()
+        {
+            _logger.LogInformation(Request.Host.Value + Request.Path);
+            try
+            {
+               
+                return _dataContext.Works.Count();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.ToString());
+                throw;
+            }
         }
     }
 }
